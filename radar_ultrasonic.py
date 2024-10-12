@@ -30,25 +30,38 @@ GPIO.setup(echo_pin, GPIO.IN)
 def measure_distance_ultrasonic():
     # Trigger the sensor
     GPIO.output(trig_pin, GPIO.HIGH)
-    time.sleep(0.00001)  # 10 microseconds
+    time.sleep(0.00001)  # 10 microseconds pulse
     GPIO.output(trig_pin, GPIO.LOW)
 
     # Measure the echo
-    pulse_start = time.time()
-    pulse_end = time.time()
-    timeout = time.time() + 0.1  # 100ms timeout
+    pulse_start = None
+    pulse_end = None
+    max_distance = 800  # Max measurable distance in cm
+    timeout_duration = max_distance / 17150 * 2  # Timeout based on max distance (seconds)
 
-    while GPIO.input(echo_pin) == 0 and time.time() < timeout:
+    start_time = time.time()
+
+    # Wait for echo to go high (pulse start)
+    while GPIO.input(echo_pin) == 0:
         pulse_start = time.time()
-    while GPIO.input(echo_pin) == 1 and time.time() < timeout:
+        if pulse_start - start_time > timeout_duration:
+            logger.warning("Ultrasonic sensor timed out waiting for pulse start.")
+            return float('inf')  # Out of range
+
+    # Wait for echo to go low (pulse end)
+    while GPIO.input(echo_pin) == 1:
         pulse_end = time.time()
+        if pulse_end - pulse_start > timeout_duration:
+            logger.warning("Ultrasonic sensor timed out waiting for pulse end.")
+            return float('inf')  # Out of range
 
-    if time.time() >= timeout:
-        return None
-
-    pulse_duration = pulse_end - pulse_start
-    distance = pulse_duration * 17150  # Speed of sound is 340 m/s
-    return distance
+    # Calculate the pulse duration and convert it to distance
+    if pulse_start and pulse_end:
+        pulse_duration = pulse_end - pulse_start
+        distance = pulse_duration * 17150  # Speed of sound is 343 m/s or 17150 cm/s
+        return distance
+    else:
+        return float('inf')  # Out of range
 
 def contains_numeric(data):
     """ Check if the data contains any numeric value. """
@@ -57,14 +70,14 @@ def contains_numeric(data):
 def execute_rpi_client():
     """ Execute the rpi_client.py script located in the specified folder. """
     try:
-        script_path = '/home/panther/Desktop/server_testing/https_server_03/https_server.py'
+        script_path = '/home/rudra/server_radar_ultrasonic/https_server.py'
         subprocess.Popen(['python3', script_path])
         logger.info("rpi_client.py executed.")
     except Exception as e:
         logger.error(f"Error executing rpi_client.py: {e}")
 
 def check_and_execute(data):
-    """ Check if the data is greater than '100' and execute rpi_client if true. """
+    """ Check if the data is numeric and greater than '100', otherwise handle non-numeric data. """
     try:
         # Extract numeric value from the data
         numeric_value = re.search(r'\d+', data)
@@ -76,7 +89,7 @@ def check_and_execute(data):
             else:
                 logger.info(f"Value {value} is not greater than 100.")
         else:
-            logger.info("No numeric value found in the data.")
+            logger.info("Target not in range (non-numeric data).")
     except ValueError as e:
         logger.error(f"Error converting data to integer: {e}")
 
@@ -98,8 +111,14 @@ def main():
 
                     if uart_data:
                         logger.info(f"Received from UART (Radar sensor): {uart_data}")
-                        check_and_execute(uart_data)
-                        distance = float(re.search(r'\d+(\.\d+)?', uart_data).group())
+                        check_and_execute(uart_data)  # Now handles non-numeric data with "Target not in range"
+                        
+                        # Attempt to extract numeric distance from uart_data if it's valid
+                        numeric_value = re.search(r'\d+(\.\d+)?', uart_data)
+                        if numeric_value:
+                            distance = float(numeric_value.group())
+                        else:
+                            logger.info("Target not in range. No numeric data received from radar sensor.")
                     else:
                         logger.info("No data from radar sensor, using ultrasonic sensor.")
                         distance = measure_distance_ultrasonic()
@@ -117,7 +136,6 @@ def main():
                                     "timestampStr": timestamp_str,
                                     "eventType": "Sensor_Event",
                                     "eventTag": "RADAR_SENSOR" if uart_data else "ULTRASONIC_SENSOR",
-                                    
                                 }
                             )
                             try:
