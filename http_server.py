@@ -19,7 +19,7 @@ data = {
     "eventTime": 1233232,
     "timestampStr": 787878,
     "eventType": "Sensor_Event",
-    "eventTag": "PIR SENSOR"
+    "eventTime": 1234567890
 }
 headers = {'Content-Type': 'application/json'}
 response = send_http_command(url, method, data=json.dumps(data), headers=headers)
