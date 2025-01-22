@@ -28,12 +28,10 @@ GPIO.setup(echo_pin, GPIO.IN)
 
 # Function to measure the distance using ultrasonic sensor
 def measure_distance_ultrasonic():
-    # Trigger the sensor
     GPIO.output(trig_pin, GPIO.HIGH)
     time.sleep(0.00001)  # 10 microseconds pulse
     GPIO.output(trig_pin, GPIO.LOW)
 
-    # Measure the echo
     pulse_start = None
     pulse_end = None
     max_distance = 800  # Max measurable distance in cm
@@ -64,11 +62,11 @@ def measure_distance_ultrasonic():
         return float('inf')  # Out of range
 
 def contains_numeric(data):
-    """ Check if the data contains any numeric value. """
+    """Check if the data contains any numeric value."""
     return bool(re.search(r'\d', data))  # Regular expression to find any digit
 
 def execute_rpi_client():
-    """ Execute the rpi_client.py script located in the specified folder. """
+    """Execute the rpi_client.py script located in the specified folder."""
     try:
         script_path = '/home/rudra/server_radar_ultrasonic/https_server.py'
         subprocess.Popen(['python3', script_path])
@@ -77,27 +75,26 @@ def execute_rpi_client():
         logger.error(f"Error executing rpi_client.py: {e}")
 
 def check_and_execute(data):
-    """ Check if the data is numeric and greater than '100', otherwise handle non-numeric data. """
+    """Check if the data is numeric and within range; execute script if valid."""
     try:
-        # Extract numeric value from the data
         numeric_value = re.search(r'\d+', data)
         if numeric_value:
             value = int(numeric_value.group())
-            if value > 100:
-                logger.info(f"Value {value} is greater than 100. Executing rpi_client.py...")
+            if 110 < value < 820:
+                logger.info(f"Value {value} is in range (1.1m to 8m). Executing rpi_client.py...")
                 execute_rpi_client()
             else:
-                logger.info(f"Value {value} is not greater than 100.")
+                logger.info(f"Value {value} is out of range.")
         else:
-            logger.info("Target not in range (non-numeric data).")
+            logger.info("Non-numeric data or out of range.")
     except ValueError as e:
-        logger.error(f"Error converting data to integer: {e}")
+        logger.error(f"Error parsing data: {e}")
 
 def main():
     # UART setup
     port = '/dev/ttyS0'
     baud_rate = 115200
-    server_url = 'http://192.168.1.5:3300'
+    server_url = 'http://192.168.1.2:80'
 
     try:
         with serial.Serial(port, baud_rate, timeout=1) as ser:
@@ -111,9 +108,8 @@ def main():
 
                     if uart_data:
                         logger.info(f"Received from UART (Radar sensor): {uart_data}")
-                        check_and_execute(uart_data)  # Now handles non-numeric data with "Target not in range"
-                        
-                        # Attempt to extract numeric distance from uart_data if it's valid
+                        check_and_execute(uart_data)
+
                         numeric_value = re.search(r'\d+(\.\d+)?', uart_data)
                         if numeric_value:
                             distance = float(numeric_value.group())
@@ -124,7 +120,6 @@ def main():
                         distance = measure_distance_ultrasonic()
 
                     if distance is not None:
-                        # Send data to HTTP server
                         try:
                             current_time = int(time.time())
                             timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -136,12 +131,13 @@ def main():
                                     "timestampStr": timestamp_str,
                                     "eventType": "Sensor_Event",
                                     "eventTag": "RADAR_SENSOR" if uart_data else "ULTRASONIC_SENSOR",
-                                }
+                                },
+                                timeout=5  # Set a timeout of 5 seconds
                             )
-                            try:
+                            if response.status_code == 200:
                                 logger.info(f"Server response: {response.json()}")
-                            except ValueError:
-                                logger.warning(f"Unexpected response format: {response.text}")
+                            else:
+                                logger.warning(f"Unexpected status code: {response.status_code}")
                         except requests.exceptions.RequestException as e:
                             logger.error(f"Error sending data to server: {e}")
                     else:
