@@ -61,16 +61,23 @@ def read_from_port(ser):
             if ser.in_waiting > 0:
                 data = ser.read(ser.in_waiting)  # Read all data available in the buffer
                 decoded_data = data.decode('utf-8', errors='ignore').strip()  # Decode and strip extra spaces/newlines
-                
+
                 # Extract numeric values from the string using regular expression
                 numeric_values = re.findall(r'\d+(\.\d+)?', decoded_data)  # Find all numbers (integers or floats)
-                
+
                 if numeric_values:
                     for value in numeric_values:
-                        sys.stdout.write(value + "\n")  # Print the extracted numeric value
-                        sys.stdout.flush()
+                        logging.info(f"Radar Sensor Value: {value} cm")  # Log the extracted radar sensor value
+                        try:
+                            distance_radar = float(value)  # Convert value to float
+                            check_and_send_request(distance_radar)  # Call the function to check and send request
+                        except ValueError:
+                            logging.error("Error: Invalid radar sensor data received.")
                 else:
-                    print(f"Discarded non-numeric data: {decoded_data}")
+                    logging.info(f"Discarded non-numeric data: {decoded_data}")
+
+    except Exception as e:
+        logging.error(f"Error while reading from radar sensor: {e}")
 
 def send_http_command(url, method='POST', params=None, data=None, headers=None):
     try:
@@ -104,6 +111,7 @@ def main():
         with serial.Serial(RADAR_PORT, baudrate=RADAR_BAUDRATE, timeout=1) as ser:
             logging.info(f"Connected to {RADAR_PORT} at {RADAR_BAUDRATE} baud")
 
+            # Start reading the radar sensor data in a separate thread
             read_thread = threading.Thread(target=read_from_port, args=(ser,))
             read_thread.daemon = True
             read_thread.start()
