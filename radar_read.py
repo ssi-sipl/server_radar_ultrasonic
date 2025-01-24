@@ -1,7 +1,7 @@
 import serial
 
 # Open the serial port (ttyS0)
-ser = serial.Serial('/dev/ttyS0', baudrate=15200, timeout=1)
+ser = serial.Serial('/dev/ttyS0', baudrate=115200, timeout=1)
 
 # Variable to store the accumulated numeric data
 accumulated_data = ''
