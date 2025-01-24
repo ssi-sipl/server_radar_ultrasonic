@@ -1,7 +1,7 @@
 import serial
 
 # Open the serial port (ttyS0)
-ser = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=1)
+ser = serial.Serial('/dev/ttyS0', baudrate=115200, timeout=1)
 
 # Infinite loop to continuously read UART data
 try:
