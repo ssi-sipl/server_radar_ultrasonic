@@ -9,16 +9,12 @@ def read_from_port(ser):
                 data = ser.read(ser.in_waiting)  # Read available data
                 decoded_data = data.decode('utf-8', errors='ignore')  # Decode data to string
 
-                print(f"Raw data received: {decoded_data}")  # Debugging: Show raw data
-
                 # Extract numeric data using a regular expression (handles integers and floats)
                 numeric_values = re.findall(r'\b\d+(\.\d+)?\b', decoded_data)
 
                 if numeric_values:
                     for value in numeric_values:
-                        print(value)  # Print numeric values to the terminal
-                else:
-                    print("No numeric values found.")  # Debugging: No numbers found in the data
+                        print(value)  # Print only numeric values to the terminal
     except KeyboardInterrupt:
         print("\nProgram interrupted by user.")
     finally:
