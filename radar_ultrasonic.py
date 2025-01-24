@@ -59,21 +59,18 @@ def read_from_port(ser):
     try:
         while True:
             if ser.in_waiting > 0:
-                data = ser.read(ser.in_waiting).decode('utf-8', errors='ignore').strip()
-                numeric_values = re.findall(r'\d+(\.\d+)?', data)
-
+                data = ser.read(ser.in_waiting)  # Read all data available in the buffer
+                decoded_data = data.decode('utf-8', errors='ignore').strip()  # Decode and strip extra spaces/newlines
+                
+                # Extract numeric values from the string using regular expression
+                numeric_values = re.findall(r'\d+(\.\d+)?', decoded_data)  # Find all numbers (integers or floats)
+                
                 if numeric_values:
                     for value in numeric_values:
-                        try:
-                            distance = float(value)
-                            logging.info(f"Radar Sensor Distance: {distance} cm")
-                            check_and_send_request(distance)
-                        except ValueError:
-                            logging.warning(f"Invalid radar data: {value}")
+                        sys.stdout.write(value + "\n")  # Print the extracted numeric value
+                        sys.stdout.flush()
                 else:
-                    logging.warning(f"Discarded non-numeric data: {data}")
-    except Exception as e:
-        logging.error(f"Error reading from serial port: {e}")
+                    print(f"Discarded non-numeric data: {decoded_data}")
 
 def send_http_command(url, method='POST', params=None, data=None, headers=None):
     try:
