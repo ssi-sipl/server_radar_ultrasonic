@@ -66,7 +66,8 @@ class MinicomMimic:
                     self.write_to_port(user_input)
 
         except KeyboardInterrupt:
-            print("\nProgram interrupted by user.")
+            # Gracefully handle Ctrl+C
+            print("\nCaught KeyboardInterrupt. Exiting...")
             self.running = False
 
         finally:
