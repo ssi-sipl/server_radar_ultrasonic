@@ -22,11 +22,21 @@ RADAR_PORT = '/dev/ttyS0'  # Hardcoded serial port for radar sensor
 RADAR_BAUDRATE = 115200        # Hardcoded baud rate for radar sensor
 
 # Server configuration
-SERVER_URL = '192.168.0.79:80'  # Hardcoded server URL
+SERVER_URL = 'http://192.168.1.2:80'  # URL for testing on local server
 
 # Valid range for triggering HTTP requests
 VALID_RANGE_MIN = 120
 VALID_RANGE_MAX = 780
+
+# Function to send HTTP command
+def send_http_command(url, method='POST', params=None, data=None, headers=None):
+    try:
+        response = requests.request(method, url, params=params, data=data, headers=headers)
+        response.raise_for_status()  # Raise an exception for 4xx or 5xx status codes
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        return None
 
 def measure_distance_ultrasonic():
     GPIO.output(TRIG_PIN, GPIO.HIGH)
@@ -54,18 +64,19 @@ def measure_distance_ultrasonic():
 
     return distance
 
-def read_uart():
-    # Configure the serial connection
-    ser = serial.Serial(RADAR_PORT, 115200, timeout=1)
-
+# Function to read from the radar sensor (UART)
+def read_from_port(ser):
     try:
         while True:
-            if ser.in_waiting > 0:  # Check if there is data waiting to be read
-                line = ser.readline().decode('utf-8').rstrip()  # Read a line and decode it
-                # Attempt to extract numeric values only
-                numeric_values = ''.join(filter(str.isdigit, line))
-                if numeric_values:  # Only print if there are numeric values
-                    logging.info(f"Radar Sensor Value: {numeric_values} cm")  # Log the numeric values
+            if ser.in_waiting > 0:
+                data = ser.read(ser.in_waiting)  # Read all data available in the buffer
+                decoded_data = data.decode('utf-8', errors='ignore').strip()  # Decode and strip extra spaces/newlines
+                
+                # Extract numeric values from the string using regular expression
+                numeric_values = ''.join(filter(str.isdigit, decoded_data))  # Find all numeric digits
+
+                if numeric_values:
+                    logging.info(f"Radar Sensor Value: {numeric_values} cm")
                     try:
                         distance_radar = float(numeric_values)  # Convert value to float
                         check_and_send_request(distance_radar)  # Call the function to check and send request
@@ -77,22 +88,13 @@ def read_uart():
     finally:
         ser.close()  # Ensure the serial port is closed on exit
 
-def send_http_command(url, method='POST', params=None, data=None, headers=None):
-    try:
-        response = requests.request(method, url, params=params, data=data, headers=headers)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
-        logging.error(f"HTTP request failed: {e}")
-        return None
-
 def check_and_send_request(distance):
     if VALID_RANGE_MIN <= distance <= VALID_RANGE_MAX:
         data = {
             "cameraId": "RD001",
             "eventTime": int(time.time()),
             "timestampStr": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "eventType": "SensorBox",
+            "eventType": "Sensor_Event",
             "EventTag": distance
         }
         headers = {'Content-Type': 'application/json'}
@@ -107,18 +109,22 @@ def check_and_send_request(distance):
 def main():
     try:
         # Start the UART reading process in a separate thread
-        uart_thread = threading.Thread(target=read_uart)
-        uart_thread.daemon = True
-        uart_thread.start()
+        with serial.Serial(RADAR_PORT, baudrate=RADAR_BAUDRATE, timeout=1) as ser:
+            logging.info(f"Connected to {RADAR_PORT} at {RADAR_BAUDRATE} baud")
 
-        while True:
-            # Ultrasonic Sensor
-            distance_ultrasonic = measure_distance_ultrasonic()
-            if distance_ultrasonic != -1:
-                logging.info(f"Ultrasonic Sensor Distance: {distance_ultrasonic:.2f} cm")
-                check_and_send_request(distance_ultrasonic)
+            # Thread to handle UART reading from radar sensor
+            read_thread = threading.Thread(target=read_from_port, args=(ser,))
+            read_thread.daemon = True
+            read_thread.start()
 
-            time.sleep(3)
+            while True:
+                # Ultrasonic Sensor
+                distance_ultrasonic = measure_distance_ultrasonic()
+                if distance_ultrasonic != -1:
+                    logging.info(f"Ultrasonic Sensor Distance: {distance_ultrasonic:.2f} cm")
+                    check_and_send_request(distance_ultrasonic)
+
+                time.sleep(3)
 
     except KeyboardInterrupt:
         logging.info("Program interrupted by user.")
