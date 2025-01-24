@@ -1,45 +1,19 @@
 import serial
-import sys
-import re
 
-def read_from_port(ser):
-    try:
-        while True:
-            if ser.in_waiting > 0:
-                data = ser.read(ser.in_waiting)  # Read available data
-                decoded_data = data.decode('utf-8', errors='ignore')  # Decode data to string
+# Open the serial port (ttyS0)
+ser = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=1)
 
-                print(f"Raw data received: {decoded_data}")  # Debugging: Show raw data
+# Infinite loop to continuously read UART data
+try:
+    while True:
+        if ser.in_waiting > 0:
+            # Read one byte of data
+            data = ser.read(1).decode('ascii', errors='ignore')  # Decode byte to string and ignore errors
 
-                # Extract numeric data using a regular expression (handles integers and floats)
-                numeric_values = re.findall(r'\b\d+(\.\d+)?\b', decoded_data)
-
-                if numeric_values:
-                    for value in numeric_values:
-                        print(value)  # Print numeric values to the terminal
-                else:
-                    print("No numeric values found.")  # Debugging: No numbers found in the data
-    except KeyboardInterrupt:
-        print("\nProgram interrupted by user.")
-    finally:
-        if ser.is_open:
-            ser.close()
-        print("Serial connection closed.")
-
-def run_serial_communication(port, baudrate=115200, timeout=1):
-    try:
-        # Set up the serial connection
-        ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
-        print(f"Connected to {port} at {baudrate} baud rate.")
-
-        # Start reading data from the serial port
-        read_from_port(ser)
-
-    except serial.SerialException as e:
-        print(f"Error: Could not open serial port {port}. {e}")
-
-if __name__ == "__main__":
-    # Adjust the port to match your system (e.g., COM3 on Windows or /dev/ttyS0 on Linux)
-    port = "/dev/ttyS0"  # Example for Linux; update for your platform (e.g., COM3 on Windows)
-    baudrate = 115200
-    run_serial_communication(port, baudrate)
+            # Check if the character is a numeric value
+            if data.isdigit():
+                print(f"Received numeric data: {data}")
+except KeyboardInterrupt:
+    print("Program interrupted.")
+finally:
+    ser.close()
