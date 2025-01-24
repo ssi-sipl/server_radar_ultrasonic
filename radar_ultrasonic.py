@@ -100,4 +100,31 @@ def check_and_send_request(distance):
         else:
             logging.error("Failed to send HTTP request.")
     else:
-        logging.info(f"Distanc
+        logging.info(f"Distance {distance:.2f} cm is out of the valid range ({VALID_RANGE_MIN} - {VALID_RANGE_MAX} cm).")
+
+def main():
+    try:
+        with serial.Serial(RADAR_PORT, baudrate=RADAR_BAUDRATE, timeout=1) as ser:
+            logging.info(f"Connected to {RADAR_PORT} at {RADAR_BAUDRATE} baud")
+
+            read_thread = threading.Thread(target=read_from_port, args=(ser,))
+            read_thread.daemon = True
+            read_thread.start()
+
+            while True:
+                # Ultrasonic Sensor
+                distance_ultrasonic = measure_distance_ultrasonic()
+                if distance_ultrasonic != -1:
+                    logging.info(f"Ultrasonic Sensor Distance: {distance_ultrasonic:.2f} cm")
+                    check_and_send_request(distance_ultrasonic)
+
+                time.sleep(3)
+
+    except KeyboardInterrupt:
+        logging.info("Program interrupted by user.")
+    finally:
+        GPIO.cleanup()
+        logging.info("GPIO cleaned up. Exiting program.")
+
+if __name__ == "__main__":
+    main()
