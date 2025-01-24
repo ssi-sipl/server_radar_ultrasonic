@@ -4,7 +4,6 @@ import RPi.GPIO as GPIO
 import time
 import serial
 import threading
-import re
 import logging
 
 # Configure logging
@@ -55,29 +54,28 @@ def measure_distance_ultrasonic():
 
     return distance
 
-def read_from_port(ser):
+def read_uart():
+    # Configure the serial connection
+    ser = serial.Serial(RADAR_PORT, 115200, timeout=1)
+
     try:
         while True:
-            if ser.in_waiting > 0:
-                data = ser.read(ser.in_waiting)  # Read all data available in the buffer
-                decoded_data = data.decode('utf-8', errors='ignore').strip()  # Decode and strip extra spaces/newlines
-
-                # Extract numeric values from the string using regular expression
-                numeric_values = re.findall(r'\d+(\.\d+)?', decoded_data)  # Find all numbers (integers or floats)
-
-                if numeric_values:
-                    for value in numeric_values:
-                        logging.info(f"Radar Sensor Value: {value} cm")  # Log the extracted radar sensor value
-                        try:
-                            distance_radar = float(value)  # Convert value to float
-                            check_and_send_request(distance_radar)  # Call the function to check and send request
-                        except ValueError:
-                            logging.error("Error: Invalid radar sensor data received.")
-                else:
-                    logging.info(f"Discarded non-numeric data: {decoded_data}")
-
-    except Exception as e:
-        logging.error(f"Error while reading from radar sensor: {e}")
+            if ser.in_waiting > 0:  # Check if there is data waiting to be read
+                line = ser.readline().decode('utf-8').rstrip()  # Read a line and decode it
+                # Attempt to extract numeric values only
+                numeric_values = ''.join(filter(str.isdigit, line))
+                if numeric_values:  # Only print if there are numeric values
+                    logging.info(f"Radar Sensor Value: {numeric_values} cm")  # Log the numeric values
+                    try:
+                        distance_radar = float(numeric_values)  # Convert value to float
+                        check_and_send_request(distance_radar)  # Call the function to check and send request
+                    except ValueError:
+                        logging.error("Error: Invalid radar sensor data received.")
+            time.sleep(0.1)  # Sleep briefly to avoid busy waiting
+    except KeyboardInterrupt:
+        logging.info("Exiting...")
+    finally:
+        ser.close()  # Ensure the serial port is closed on exit
 
 def send_http_command(url, method='POST', params=None, data=None, headers=None):
     try:
@@ -108,22 +106,19 @@ def check_and_send_request(distance):
 
 def main():
     try:
-        with serial.Serial(RADAR_PORT, baudrate=RADAR_BAUDRATE, timeout=1) as ser:
-            logging.info(f"Connected to {RADAR_PORT} at {RADAR_BAUDRATE} baud")
+        # Start the UART reading process in a separate thread
+        uart_thread = threading.Thread(target=read_uart)
+        uart_thread.daemon = True
+        uart_thread.start()
 
-            # Start reading the radar sensor data in a separate thread
-            read_thread = threading.Thread(target=read_from_port, args=(ser,))
-            read_thread.daemon = True
-            read_thread.start()
+        while True:
+            # Ultrasonic Sensor
+            distance_ultrasonic = measure_distance_ultrasonic()
+            if distance_ultrasonic != -1:
+                logging.info(f"Ultrasonic Sensor Distance: {distance_ultrasonic:.2f} cm")
+                check_and_send_request(distance_ultrasonic)
 
-            while True:
-                # Ultrasonic Sensor
-                distance_ultrasonic = measure_distance_ultrasonic()
-                if distance_ultrasonic != -1:
-                    logging.info(f"Ultrasonic Sensor Distance: {distance_ultrasonic:.2f} cm")
-                    check_and_send_request(distance_ultrasonic)
-
-                time.sleep(3)
+            time.sleep(3)
 
     except KeyboardInterrupt:
         logging.info("Program interrupted by user.")
