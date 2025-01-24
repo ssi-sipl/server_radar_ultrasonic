@@ -19,11 +19,11 @@ GPIO.setup(TRIG_PIN, GPIO.OUT)
 GPIO.setup(ECHO_PIN, GPIO.IN)
 
 # Radar sensor serial communication setup
-RADAR_PORT = '/dev/ttyUSB0'  # Hardcoded serial port for radar sensor
-RADAR_BAUDRATE = 9600        # Hardcoded baud rate for radar sensor
+RADAR_PORT = '/dev/ttyS0'  # Hardcoded serial port for radar sensor
+RADAR_BAUDRATE = 115200        # Hardcoded baud rate for radar sensor
 
 # Server configuration
-SERVER_URL = 'http://example.com/api'  # Hardcoded server URL
+SERVER_URL = '192.168.0.79:80'  # Hardcoded server URL
 
 # Valid range for triggering HTTP requests
 VALID_RANGE_MIN = 120
