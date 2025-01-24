@@ -6,54 +6,49 @@ import serial
 import threading
 import re
 import logging
-import configparser
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Load configuration
-config = configparser.ConfigParser()
-config.read('sensor_config.ini')
-
 # GPIO Configuration
 GPIO.setmode(GPIO.BOARD)
 
-trig_pin = int(config['UltrasonicSensor']['TrigPin'])
-echo_pin = int(config['UltrasonicSensor']['EchoPin'])
-GPIO.setup(trig_pin, GPIO.OUT)
-GPIO.setup(echo_pin, GPIO.IN)
+TRIG_PIN = 23  # Hardcoded GPIO pin for trigger
+ECHO_PIN = 24  # Hardcoded GPIO pin for echo
+GPIO.setup(TRIG_PIN, GPIO.OUT)
+GPIO.setup(ECHO_PIN, GPIO.IN)
 
 # Radar sensor serial communication setup
-port = config['RadarSensor']['Port']
-baudrate = int(config['RadarSensor']['BaudRate'])
+RADAR_PORT = '/dev/ttyUSB0'  # Hardcoded serial port for radar sensor
+RADAR_BAUDRATE = 9600        # Hardcoded baud rate for radar sensor
 
 # Server configuration
-server_url = config['Server']['Url']
+SERVER_URL = 'http://example.com/api'  # Hardcoded server URL
 
 # Valid range for triggering HTTP requests
 VALID_RANGE_MIN = 120
 VALID_RANGE_MAX = 780
 
 def measure_distance_ultrasonic():
-    GPIO.output(trig_pin, GPIO.HIGH)
+    GPIO.output(TRIG_PIN, GPIO.HIGH)
     time.sleep(0.00001)  # 10 microseconds
-    GPIO.output(trig_pin, GPIO.LOW)
+    GPIO.output(TRIG_PIN, GPIO.LOW)
 
     pulse_start = time.time()
     timeout_start = pulse_start
 
-    while GPIO.input(echo_pin) == 0:
+    while GPIO.input(ECHO_PIN) == 0:
         pulse_start = time.time()
-        if pulse_start - timeout_start > 0.02:
+        if pulse_start - timeout_start > 0.02:  # Timeout for no echo received
             return -1
 
-    while GPIO.input(echo_pin) == 1:
+    while GPIO.input(ECHO_PIN) == 1:
         pulse_end = time.time()
-        if pulse_end - pulse_start > 0.02:
+        if pulse_end - pulse_start > 0.02:  # Timeout for long echo
             return -1
 
     pulse_duration = pulse_end - pulse_start
-    distance = pulse_duration * 17150
+    distance = pulse_duration * 17150  # Convert to cm
 
     if distance < 2 or distance > 800:
         return -1
@@ -99,37 +94,10 @@ def check_and_send_request(distance):
             "EventTag": distance
         }
         headers = {'Content-Type': 'application/json'}
-        response = send_http_command(server_url, method='POST', data=json.dumps(data), headers=headers)
+        response = send_http_command(SERVER_URL, method='POST', data=json.dumps(data), headers=headers)
         if response:
             logging.info(f"HTTP Response: {response}")
         else:
             logging.error("Failed to send HTTP request.")
     else:
-        logging.info(f"Distance {distance:.2f} cm is out of the valid range ({VALID_RANGE_MIN} - {VALID_RANGE_MAX} cm).")
-
-def main():
-    try:
-        with serial.Serial(port, baudrate=baudrate, timeout=1) as ser:
-            logging.info(f"Connected to {port} at {baudrate} baud")
-
-            read_thread = threading.Thread(target=read_from_port, args=(ser,))
-            read_thread.daemon = True
-            read_thread.start()
-
-            while True:
-                # Ultrasonic Sensor
-                distance_ultrasonic = measure_distance_ultrasonic()
-                if distance_ultrasonic != -1:
-                    logging.info(f"Ultrasonic Sensor Distance: {distance_ultrasonic:.2f} cm")
-                    check_and_send_request(distance_ultrasonic)
-
-                time.sleep(3)
-
-    except KeyboardInterrupt:
-        logging.info("Program interrupted by user.")
-    finally:
-        GPIO.cleanup()
-        logging.info("GPIO cleaned up. Exiting program.")
-
-if __name__ == "__main__":
-    main()
+        logging.info(f"Distanc
