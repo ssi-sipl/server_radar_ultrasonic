@@ -1,16 +1,21 @@
 import serial
 import sys
-import time
+import re
 
 def read_from_port(ser):
     try:
         while True:
             if ser.in_waiting > 0:
                 data = ser.read(ser.in_waiting)  # Read available data
-                decoded_data = data.decode('utf-8', errors='ignore')  # Decode and strip extra spaces/newlines
-                if decoded_data:
-                    sys.stdout.write(decoded_data)  # Print the data to the terminal
-                    sys.stdout.flush()
+                decoded_data = data.decode('utf-8', errors='ignore')  # Decode data to string
+
+                # Extract numeric data using a regular expression (handles integers and floats)
+                numeric_values = re.findall(r'\b\d+(\.\d+)?\b', decoded_data)
+
+                if numeric_values:
+                    for value in numeric_values:
+                        print(value)  # Print numeric values to the terminal
+                # Else, nothing is printed for non-numeric data
     except KeyboardInterrupt:
         print("\nProgram interrupted by user.")
     finally:
