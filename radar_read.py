@@ -12,15 +12,16 @@ def read_from_port(ser):
                 data = ser.read(ser.in_waiting)  # Read all data available in the buffer
                 decoded_data = data.decode('utf-8', errors='ignore').strip()  # Decode and strip extra spaces/newlines
                 
-                # Extract numeric values from the string using regular expression
-                numeric_values = re.findall(r'\d+(\.\d+)?', decoded_data)  # Find all numbers (integers or floats)
+                # Extract integer values from the string using regular expression
+                integer_values = re.findall(r'\b\d+\b', decoded_data)  # Find all integers (whole numbers)
                 
-                if numeric_values:
-                    for value in numeric_values:
-                        sys.stdout.write(value + "\n")  # Print the extracted numeric value
+                if integer_values:
+                    for value in integer_values:
+                        sys.stdout.write(value + "\n")  # Print the extracted integer value
                         sys.stdout.flush()
                 else:
-                    print(f"Discarded non-numeric data: {decoded_data}")
+                    # Only print if the data contains integers, otherwise discard it quietly
+                    pass
     except Exception as e:
         print(f"Error while reading from serial port: {e}")
 
