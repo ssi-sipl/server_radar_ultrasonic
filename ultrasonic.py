@@ -57,12 +57,14 @@ def measure_distance_ultrasonic():
     pulse_duration = pulse_end - pulse_start
     distance = pulse_duration * 16200  # Convert to cm
 
-    if distance < 2 or distance > 800:
+    if distance < 5 or distance > 800:
         return -1
-
+    
+    logging.info(f"Measured Distance: {distance:.2f} cm")
     return distance
 
 def check_and_send_request(distance):
+    logging.info(f"Checking distance: {distance:.2f} cm")
     if VALID_RANGE_MIN <= distance <= VALID_RANGE_MAX:
         data = {
             "cameraId": "RD001",
