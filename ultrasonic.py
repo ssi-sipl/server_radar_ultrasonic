@@ -55,7 +55,7 @@ def measure_distance_ultrasonic():
             return -1
 
     pulse_duration = pulse_end - pulse_start
-    distance = pulse_duration * 17150  # Convert to cm
+    distance = pulse_duration * 16200  # Convert to cm
 
     if distance < 2 or distance > 800:
         return -1
