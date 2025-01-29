@@ -5,7 +5,11 @@ import time
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename='ultrasonic.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # GPIO Configuration
 GPIO.setmode(GPIO.BOARD)
@@ -29,7 +33,7 @@ def send_http_command(url, method='POST', params=None, data=None, headers=None):
         response.raise_for_status()  # Raise an exception for 4xx or 5xx status codes
         return response.text
     except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
+        logging.error(f"Error: {e}")
         return None
 
 def measure_distance_ultrasonic():
