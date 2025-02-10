@@ -56,21 +56,22 @@ def activate_virtualenv(venv_name="rudrarakshak"):
     
     if os.path.exists(activate_script):
         print(f"To activate the virtual environment, run: \nsource {activate_script}")
+        print(f"To deactivate the virtual environment, run: \ndeactivate")
     else:
         print(f"Could not find the activation script. Ensure the environment was created successfully.")
 
 def main():
     """Main function to orchestrate the setup process."""
     # Perform OS update and upgrade
-    update_and_upgrade_os()
+    # update_and_upgrade_os()
 
     # Install Python and Git if not present
-    install_python()
-    install_git()
+    # install_python()
+    # install_git()
 
     # Create and guide virtual environment activation
     venv_name = "rudrarakshak"
-    create_virtualenv(venv_name)
+    # create_virtualenv(venv_name)
     activate_virtualenv(venv_name)
 
 if __name__ == "__main__":

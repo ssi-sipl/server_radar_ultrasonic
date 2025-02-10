@@ -1,3 +1,4 @@
+#!./rudrarakshak/bin/python3
 import requests
 import json
 import RPi.GPIO as GPIO
