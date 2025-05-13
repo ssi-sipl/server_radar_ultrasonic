@@ -22,7 +22,7 @@ RADAR_PORT = '/dev/ttyS0'  # Hardcoded serial port for radar sensor
 RADAR_BAUDRATE = 115200        # Hardcoded baud rate for radar sensor
 
 # Server configuration
-SERVER_URL = 'http://192.168.1.2:80'  # URL for testing on local server
+SERVER_URL = 'http://192.168.1.3:3300/analyticEvent'  # URL for testing on local server
 
 # Valid range for triggering HTTP requests
 VALID_RANGE_MIN = 120
@@ -93,9 +93,9 @@ def check_and_send_request(distance):
         data = {
             "cameraId": "RD001",
             "eventTime": int(time.time()),
-            "timestampStr": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "timeStampStr": time.strftime("%Y-%m-%d %H:%M:%S"),
             "eventType": "Sensor_Event",
-            "EventTag": distance
+            "eventTag": "distance"
         }
         headers = {'Content-Type': 'application/json'}
         response = send_http_command(SERVER_URL, method='POST', data=json.dumps(data), headers=headers)
