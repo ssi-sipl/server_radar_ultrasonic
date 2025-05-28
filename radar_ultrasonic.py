@@ -22,7 +22,7 @@ RADAR_PORT = '/dev/ttyS0'  # Hardcoded serial port for radar sensor
 RADAR_BAUDRATE = 115200        # Hardcoded baud rate for radar sensor
 
 # Server configuration
-SERVER_URL = 'http://192.168.1.3:3300/analyticEvent'  # URL for testing on local server
+SERVER_URL = 'http://192.168.0.5:3300/analyticEvent'  # URL for testing on local server
 
 # Valid range for triggering HTTP requests
 VALID_RANGE_MIN = 120
