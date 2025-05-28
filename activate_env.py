@@ -7,8 +7,8 @@ import time
 USER = "rudra"
 WORKING_DIR = "/home/rudra/server_radar_ultrasonic"
 VENV_NAME = "rudrarakshak"
-VENV_PATH = os.path.join(WORKING_DIR, VENV_NAME)
 PYTHON_SCRIPT = os.path.join(WORKING_DIR, "radar_ultrasonic.py")
+VENV_PATH = os.path.join(WORKING_DIR, VENV_NAME)
 SERVICE_NAME = "radar.service"
 SERVICE_PATH = f"/etc/systemd/system/{SERVICE_NAME}"
 REQUIREMENTS_FILE = os.path.join(WORKING_DIR, "requirements.txt")
@@ -48,6 +48,14 @@ def wait_for_apt_lock(max_wait=300):
         waited += 5
 
     print("✅ Lock released. Continuing...")
+
+def ensure_lsof_installed():
+    print("Checking for 'lsof' utility...")
+    result = subprocess.run(["which", "lsof"], stdout=subprocess.PIPE)
+    if result.returncode != 0:
+        print("'lsof' not found. Installing...")
+        wait_for_apt_lock()
+        run_command(["sudo", "apt-get", "install", "-y", "lsof"], "Installing lsof")
 
 def update_and_upgrade_os():
     wait_for_apt_lock()
@@ -105,6 +113,7 @@ WantedBy=multi-user.target
     run_command(["sudo", "systemctl", "start", SERVICE_NAME], "Starting service now")
 
 def main():
+    ensure_lsof_installed()
     update_and_upgrade_os()
     install_basics()
     create_virtualenv()
