@@ -15,12 +15,12 @@ def send_http_command(url, method='POST', params=None, data=None, headers=None):
 url = 'http://192.168.0.79:80' #url for testing on local server
 method = 'POST'
 data = {
-    "cameraId": "RD001",
-    "eventTime": 1233232,
-    "timestampStr": 787878,
-    "eventType": "Sensor_Event",
-    "eventTime": 1234567890
-}
+            "cameraId": "RD001",
+            "eventTime": int(time.time()),
+            "timeStampStr": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "eventType": "Sensor_Event",
+            "eventTag": "distance"
+        }
 headers = {'Content-Type': 'application/json'}
 response = send_http_command(url, method, data=json.dumps(data), headers=headers)
 if response:
