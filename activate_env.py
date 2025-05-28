@@ -28,7 +28,11 @@ def run_command(command, description):
 def update_and_upgrade_os():
     print("Updating system...")
     run_command(["sudo", "apt-get", "update"], "Update package lists")
-    run_command(["sudo", "apt-get", "upgrade", "-y"], "Upgrade packages")
+    try:
+        run_command(["sudo", "apt-get", "upgrade", "-y"], "Upgrade packages")
+    except SystemExit:
+        print("⚠️ Warning: Package upgrade failed. Continuing setup anyway.")
+
 
 def install_basics():
     print("Installing required system packages...")
