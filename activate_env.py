@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import time
 
 # CONFIGURATION
 USER = "rudra"
@@ -25,25 +26,48 @@ def run_command(command, description):
         print(f"{description} failed with error: {e}")
         sys.exit(1)
 
+def wait_for_apt_lock(max_wait=300):
+    """Wait for the apt lock to be released before continuing."""
+    lock_file = "/var/lib/dpkg/lock-frontend"
+    waited = 0
+    print("Checking for apt/dpkg lock...")
+
+    while os.path.exists(lock_file):
+        try:
+            pid_output = subprocess.check_output(["lsof", lock_file]).decode()
+            print(f"🔒 Lock held by:\n{pid_output}")
+        except subprocess.CalledProcessError:
+            break  # Lock file exists but not in use
+
+        if waited >= max_wait:
+            print(f"❌ Timeout: Lock still held after {max_wait} seconds.")
+            sys.exit(1)
+
+        print(f"⏳ Lock present. Waiting... {waited}s")
+        time.sleep(5)
+        waited += 5
+
+    print("✅ Lock released. Continuing...")
+
 def update_and_upgrade_os():
-    print("Updating system...")
+    wait_for_apt_lock()
     run_command(["sudo", "apt-get", "update"], "Update package lists")
     try:
         run_command(["sudo", "apt-get", "upgrade", "-y"], "Upgrade packages")
     except SystemExit:
         print("⚠️ Warning: Package upgrade failed. Continuing setup anyway.")
 
-
 def install_basics():
-    print("Installing required system packages...")
-    run_command(["sudo", "apt-get", "install", "-y", "python3", "python3-pip", "python3-venv", "git"], "Installing Python3, pip, venv, and Git")
+    wait_for_apt_lock()
+    run_command(["sudo", "apt-get", "install", "-y", "python3", "python3-pip", "python3-venv", "git"],
+                "Installing Python3, pip, venv, and Git")
 
 def create_virtualenv():
     if not os.path.exists(VENV_PATH):
         print(f"Creating virtual environment at {VENV_PATH}...")
         run_command(["python3", "-m", "venv", VENV_PATH], "Virtual environment creation")
     else:
-        print("Virtual environment already exists.")
+        print("✅ Virtual environment already exists.")
 
 def install_requirements():
     if os.path.exists(REQUIREMENTS_FILE):
@@ -87,7 +111,7 @@ def main():
     install_requirements()
     create_service()
 
-    print("\n✅ Setup complete. Radar system will now auto-start on reboot.")
+    print("\n✅ Setup complete. Your script will now auto-start on reboot.")
     print(f"📂 Virtual environment: {VENV_PATH}")
     print(f"📜 Service file: {SERVICE_PATH}")
     print(f"🪵 Log file: {LOG_FILE}")
