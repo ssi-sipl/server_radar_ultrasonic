@@ -32,12 +32,18 @@ def wait_for_apt_lock(max_wait=300):
     waited = 0
     print("Checking for apt/dpkg lock...")
 
+    def lsof_installed():
+        return subprocess.run(["which", "lsof"], stdout=subprocess.DEVNULL).returncode == 0
+
     while os.path.exists(lock_file):
-        try:
-            pid_output = subprocess.check_output(["lsof", lock_file]).decode()
-            print(f"🔒 Lock held by:\n{pid_output}")
-        except subprocess.CalledProcessError:
-            break  # Lock file exists but not in use
+        if lsof_installed():
+            try:
+                pid_output = subprocess.check_output(["lsof", lock_file]).decode()
+                print(f"🔒 Lock held by:\n{pid_output}")
+            except subprocess.CalledProcessError:
+                break  # Lock file exists but not in use
+        else:
+            print("🔍 'lsof' not installed. Skipping PID display.")
 
         if waited >= max_wait:
             print(f"❌ Timeout: Lock still held after {max_wait} seconds.")
