@@ -120,8 +120,8 @@ WantedBy=multi-user.target
 
 def main():
     ensure_lsof_installed()
-    update_and_upgrade_os()
-    install_basics()
+   # update_and_upgrade_os()
+   # install_basics()
     create_virtualenv()
     install_requirements()
     create_service()
