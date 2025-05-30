@@ -61,7 +61,7 @@ def ensure_lsof_installed():
     if result.returncode != 0:
         print("'lsof' not found. Installing...")
         wait_for_apt_lock()
-        run_command(["sudo", "apt-get", "install", "-y", "lsof"], "Installing lsof")
+        run_command(["sudo", "apt-get", "install", "lsof" "-y",], "Installing lsof")
 
 def update_and_upgrade_os():
     wait_for_apt_lock()
@@ -88,7 +88,7 @@ def install_requirements():
         print("Installing packages from requirements.txt...")
         run_command([VENV_PIP, "install", "-r", REQUIREMENTS_FILE], "Installing Python packages")
     else:
-        print("⚠️ No requirements.txt found. Skipping package installation.")
+        print("⚠️ No requirements.txt found. Skipping package installation.Recommended to install the packages manually")
 
 def create_service():
     service_content = f"""[Unit]
@@ -116,12 +116,12 @@ WantedBy=multi-user.target
     run_command(["sudo", "systemctl", "daemon-reexec"], "Reloading systemd")
     run_command(["sudo", "systemctl", "daemon-reload"], "Reloading services")
     run_command(["sudo", "systemctl", "enable", SERVICE_NAME], "Enabling service to run at boot")
-    run_command(["sudo", "systemctl", "start", SERVICE_NAME], "Starting service now")
+    run_command(["sudo", "systemctl", "restart", SERVICE_NAME], "Starting service now")
 
 def main():
     ensure_lsof_installed()
-   # update_and_upgrade_os()
-   # install_basics()
+    update_and_upgrade_os()
+    install_basics()
     create_virtualenv()
     install_requirements()
     create_service()
