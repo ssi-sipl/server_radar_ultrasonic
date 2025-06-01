@@ -61,7 +61,7 @@ def ensure_lsof_installed():
     if result.returncode != 0:
         print("'lsof' not found. Installing...")
         wait_for_apt_lock()
-        run_command(["sudo", "apt-get", "install", "lsof" "-y",], "Installing lsof")
+        run_command(["sudo", "apt-get", "install", "lsof", "-y",], "Installing lsof")
 
 def update_and_upgrade_os():
     wait_for_apt_lock()
