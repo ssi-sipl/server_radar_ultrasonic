@@ -120,10 +120,10 @@ WantedBy=multi-user.target
 
 def main():
     ensure_lsof_installed()
-    update_and_upgrade_os()
-    install_basics()
-    create_virtualenv()
-    install_requirements()
+  #  update_and_upgrade_os()
+ #   install_basics()
+  #  create_virtualenv()
+  #  install_requirements()
     create_service()
 
     print("\n✅ Setup complete. Your script will now auto-start on reboot.")
