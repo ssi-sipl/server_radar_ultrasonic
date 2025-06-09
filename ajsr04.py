@@ -5,8 +5,8 @@ import time
 GPIO.setmode(GPIO.BOARD)
 
 # Define the physical pin numbers
-trig_pin = 12  # Physical pin 12 (GPIO 18)
-echo_pin = 18  # Physical pin 18 (GPIO 24)
+trig_pin = 23  # Physical pin 12 (GPIO 18)
+echo_pin = 24  # Physical pin 18 (GPIO 24)
 
 # Set the GPIO directions
 GPIO.setup(trig_pin, GPIO.OUT)
