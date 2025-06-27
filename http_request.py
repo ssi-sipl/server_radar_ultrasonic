@@ -1,5 +1,6 @@
 import requests
 import json
+import time 
 
 def send_http_command(url, method='POST', params=None, data=None, headers=None):
     try:
@@ -9,10 +10,9 @@ def send_http_command(url, method='POST', params=None, data=None, headers=None):
     except requests.exceptions.RequestException as e:
         print(f"Error: {e}")
         return None
-
 # Example usage:
-#url = 'http://192.168.1.5:3300/analyticEvent' url for AI BOX
-url = 'http://192.168.0.79:80' #url for testing on local server
+url = 'http://192.168.1.5:3300/analyticEvent' #url for AI BOX
+#url = 'http://192.168.0.79:80' #url for testing on local server
 method = 'POST'
 data = {
             "cameraId": "RD001",
