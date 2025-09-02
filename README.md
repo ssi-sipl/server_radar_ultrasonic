@@ -6,7 +6,7 @@
 The **Rudrarakshak-SensorBox** project is a collection of Python scripts and configuration files designed to work with Raspberry Pi and sensors (e.g., ultrasonic and radar). It enables distance measurement, data processing, and server communication.  
 
 
-![sensorbox_connections.png]()
+![sensorbox_connections.png](https://github.com/ssi-sipl/server_radar_ultrasonic/blob/main/sensorbox_connections.png)
 
 This README provides a detailed explanation of each component of the project.  
 
@@ -137,4 +137,5 @@ To modify the valid range, update these variables:
 
 ## Summary  
 The **Rudrarakshak-SensorBox** project integrates sensor-based distance measurement, data processing, and server communication into a cohesive system. It is modular, easy to use, and ideal for verifying hardware functionality, collecting measurements, and sending data for analysis.  
+
 
